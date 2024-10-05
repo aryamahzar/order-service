@@ -22,6 +22,8 @@ func main() {
 		mongoURI = "mongodb://localhost:27017" // fallback in case MONGO_URI is not set
 	}
 
+	log.Printf("mongoURI: %+v\n", mongoURI)
+
 	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(mongoURI))
 	if err != nil {
 		log.Fatalf("Failed to connect to MongoDB: %v", err)

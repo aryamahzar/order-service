@@ -1,0 +1,21 @@
+services:
+  mongodb:
+    image: mongo
+    container_name: mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db  # Use a named volume
+
+  orderservice:
+    image: e-commerce-backend
+    container_name: order-service
+    ports:
+      - "8080:8080"
+    environment:
+      - MONGODB_URI=mongodb://mongodb:27017
+    depends_on:
+      - mongodb
+
+volumes:
+  mongodb_data:  # Declare the named volume
