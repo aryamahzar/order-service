@@ -1,4 +1,4 @@
-package main
+package routes
 
 import (
 	"order-service/handlers"
@@ -6,7 +6,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func setupRoutes(orderHandler *handlers.OrderHandler) *mux.Router {
+func SetupRoutes(orderHandler *handlers.OrderHandler) *mux.Router {
 	r := mux.NewRouter()
 
 	// Order routes

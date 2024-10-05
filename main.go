@@ -9,6 +9,7 @@ import (
 
 	"order-service/handlers"
 	"order-service/repository"
+	"order-service/routes"
 	"order-service/service"
 
 	"go.mongodb.org/mongo-driver/mongo"
@@ -53,7 +54,7 @@ func main() {
 	orderService := service.NewOrderService(*orderRepository)
 	orderHandler := handlers.NewOrderHandler(*orderService)
 
-	r := setupRoutes(orderHandler)
+	r := routes.SetupRoutes(orderHandler)
 
 	log.Println("Server listening on port 8080")
 	http.ListenAndServe(":8080", r)
