@@ -7,6 +7,7 @@ import (
 	"os"
 	"time"
 
+	"order-service/auth"
 	"order-service/handlers"
 	"order-service/repository"
 	"order-service/routes"
@@ -53,8 +54,9 @@ func main() {
 	orderRepository := repository.NewOrderRepository(db)
 	orderService := service.NewOrderService(*orderRepository)
 	orderHandler := handlers.NewOrderHandler(*orderService)
+	authHandler := new(auth.AuthHandler)
 
-	r := routes.SetupRoutes(orderHandler)
+	r := routes.SetupRoutes(orderHandler, authHandler)
 
 	log.Println("Server listening on port 8080")
 	http.ListenAndServe(":8080", r)

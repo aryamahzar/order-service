@@ -9,17 +9,18 @@ const (
 
 var rolePermissions = map[Role][]string{
 	Admin: {
-		"add_product",
-		"update_product",
-		"delete_product",
-		"view_all_products",
-		"manage_roles",
-		"search_products",
+		"CreateOrder",
+		"ListOrders",
+		"GetOrder",
+		"UpdateOrder",
+		"CancelOrder",
 	},
 	User: {
-		"view_product",
-		"check_availability",
-		"search_products",
+		"CreateOrder",
+		"ListOrders",
+		"GetOrder",
+		"UpdateOrder",
+		"CancelOrder",
 	},
 }
 
