@@ -7,8 +7,10 @@ import (
 	"os"
 	"time"
 
+	"order-service/auth"
 	"order-service/handlers"
 	"order-service/repository"
+	"order-service/routes"
 	"order-service/service"
 
 	"go.mongodb.org/mongo-driver/mongo"
@@ -21,6 +23,8 @@ func main() {
 	if mongoURI == "" {
 		mongoURI = "mongodb://localhost:27017" // fallback in case MONGO_URI is not set
 	}
+
+	log.Printf("mongoURI: %+v\n", mongoURI)
 
 	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(mongoURI))
 	if err != nil {
@@ -50,8 +54,9 @@ func main() {
 	orderRepository := repository.NewOrderRepository(db)
 	orderService := service.NewOrderService(*orderRepository)
 	orderHandler := handlers.NewOrderHandler(*orderService)
+	authHandler := new(auth.AuthHandler)
 
-	r := setupRoutes(orderHandler)
+	r := routes.SetupRoutes(orderHandler, authHandler)
 
 	log.Println("Server listening on port 8080")
 	http.ListenAndServe(":8080", r)

@@ -4,6 +4,7 @@ go 1.22.5
 
 require (
 	github.com/antihax/optional v1.0.0
+	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/gorilla/mux v1.8.1
 	go.mongodb.org/mongo-driver v1.17.0
 	golang.org/x/oauth2 v0.23.0
