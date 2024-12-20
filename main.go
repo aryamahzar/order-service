@@ -13,18 +13,26 @@ import (
 	"order-service/routes"
 	"order-service/service"
 
+	"github.com/joho/godotenv"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 func main() {
-	// MongoDB connection setup
-	mongoURI := os.Getenv("MONGODB_URI")
-	if mongoURI == "" {
-		mongoURI = "mongodb://localhost:27017" // fallback in case MONGO_URI is not set
-	}
 
-	log.Printf("mongoURI: %+v\n", mongoURI)
+	// MongoDB connection setup
+	err := godotenv.Load()
+    if err != nil {
+        log.Fatalf("Error loading .env file: %v", err)
+    }
+
+    // MongoDB connection setup
+    mongoURI := os.Getenv("MONGO_URI")
+    if mongoURI == "" {
+        log.Fatal("MONGO_URI environment variable not set")
+    }
+
+    log.Printf("mongoURI: %+v\n", mongoURI)
 
 	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(mongoURI))
 	if err != nil {
