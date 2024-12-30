@@ -1,7 +1,9 @@
 package handlers
 
 import (
+	"crypto/tls"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -13,12 +15,23 @@ import (
 )
 
 type OrderHandler struct {
-	orderService service.OrderService
+	orderService  service.OrderService
+	apiGatewayURL string
+	httpClient    *http.Client
 }
 
-func NewOrderHandler(orderService service.OrderService) *OrderHandler {
+func NewOrderHandler(orderService service.OrderService, apiGatewayURL string) *OrderHandler {
+	// Create an HTTP client with a custom transport to skip SSL verification
+	httpClient := &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		},
+	}
+
 	return &OrderHandler{
-		orderService: orderService,
+		orderService:  orderService,
+		apiGatewayURL: apiGatewayURL,
+		httpClient:    httpClient,
 	}
 }
 
@@ -29,6 +42,31 @@ func (h *OrderHandler) CreateOrder(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Validate order details
+	if order.UserID == "" || len(order.Items) == 0 {
+		utils.RespondWithError(w, http.StatusBadRequest, "Invalid order details")
+		return
+	}
+
+	// Check product availability with Inventory Service via API Gateway
+	for _, item := range order.Items {
+
+		available, err := h.checkProductAvailability(item.ProductID, item.Quantity)
+		fmt.Println("available : ", available)
+		fmt.Println("err : ", err)
+		if err != nil || !available {
+			utils.RespondWithError(w, http.StatusBadRequest, fmt.Sprintf("Product %s is not available", item.ProductID))
+			return
+		}
+	}
+
+	// Calculate total amount
+	totalAmount := 0.0
+	for _, item := range order.Items {
+		totalAmount += item.UnitPrice * float64(item.Quantity)
+	}
+	order.TotalAmount = totalAmount
+
 	createdOrder, err := h.orderService.CreateOrder(r.Context(), &order)
 	if err != nil {
 		utils.RespondWithError(w, http.StatusInternalServerError, err.Error())
@@ -36,6 +74,51 @@ func (h *OrderHandler) CreateOrder(w http.ResponseWriter, r *http.Request) {
 	}
 
 	utils.RespondWithJSON(w, http.StatusCreated, createdOrder)
+}
+
+func (h *OrderHandler) checkProductAvailability(productID string, quantity int) (bool, error) {
+
+	    // Configure a custom transport to skip SSL verification
+		insecureTransport := &http.Transport{
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: true, // Ignore insecure SSL certificates
+			},
+		}
+
+		insecureClient := &http.Client{Transport: insecureTransport}
+
+
+	url := fmt.Sprintf("%s/products/%s", h.apiGatewayURL, productID)
+	fmt.Println("url : ", url)
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+
+	if err != nil {
+		return false, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := insecureClient.Do(req)
+	if err != nil {
+		return false, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return false, fmt.Errorf("failed to check product availability")
+	}
+
+	var product struct {
+		ProductID string `json:"product_id"`
+		Quantity  int    `json:"quantity"`
+		Name	  string `json:"name"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&product); err != nil {
+		fmt.Println("error decode check availability  :", err)
+		return false, err
+	}
+	fmt.Printf("product : %s\n", product)
+	return product.Quantity >= quantity, nil
+
 }
 
 func (h *OrderHandler) ListOrders(w http.ResponseWriter, r *http.Request) {

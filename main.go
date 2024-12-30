@@ -22,22 +22,23 @@ func main() {
 
 	// MongoDB connection setup
 	err := godotenv.Load()
-    if err != nil {
-        log.Fatalf("Error loading .env file: %v", err)
-    }
+	if err != nil {
+		log.Fatalf("Error loading .env file: %v", err)
+	}
 
-    // MongoDB connection setup
-    mongoURI := os.Getenv("MONGO_URI")
-    if mongoURI == "" {
-        log.Fatal("MONGO_URI environment variable not set")
-    }
+	// MongoDB connection setup
+	mongoURI := os.Getenv("MONGO_URI")
+	if mongoURI == "" {
+		log.Fatal("MONGO_URI environment variable not set")
+	}
 
-    log.Printf("mongoURI: %+v\n", mongoURI)
+	log.Printf("mongoURI: %+v\n", mongoURI)
 
 	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(mongoURI))
 	if err != nil {
 		log.Fatalf("Failed to connect to MongoDB: %v", err)
 	}
+
 	defer func() {
 		if err := client.Disconnect(context.TODO()); err != nil {
 			log.Fatalf("Failed to disconnect from MongoDB: %v", err)
@@ -61,11 +62,17 @@ func main() {
 
 	orderRepository := repository.NewOrderRepository(db)
 	orderService := service.NewOrderService(*orderRepository)
-	orderHandler := handlers.NewOrderHandler(*orderService)
+	apiGatewayURL := "https://api-gateway:8002"
+	orderHandler := handlers.NewOrderHandler(*orderService, apiGatewayURL)
 	authHandler := new(auth.AuthHandler)
 
 	r := routes.SetupRoutes(orderHandler, authHandler)
 
-	log.Println("Server listening on port 8080")
-	http.ListenAndServe(":8080", r)
+	// Apply authentication middleware if ENABLE_AUTH is true
+	if os.Getenv("ENABLE_AUTH") == "true" {
+		r.Use(auth.JWTAuth)
+	}
+
+	log.Println("Server listening on port 8003")
+	http.ListenAndServe(":8003", r)
 }
