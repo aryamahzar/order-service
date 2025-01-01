@@ -1,26 +1,32 @@
-services:
-  mongodb:
-    image: mongo
-    container_name: mongodb
-    ports:
-      - "27017:27017"
-    volumes:
-      - mongodb_data:/data/db  # Use a named volume
+version: '3.8'
 
-  orderservice:
-    image: e-commerce-backend
+services:
+  mongodb_order:
+    image: mongo:latest
+    container_name: mongodb_order_service
+    ports:
+      - "27018:27017" # Use a different port to avoid conflict
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: example
+    volumes:
+      - mongo-order-data:/data/db
+    command: mongod --bind_ip_all
+
+  app:
+    build: .
     container_name: order-service
     ports:
-      - "8080:8080"
+      - "8081:8080" # Use a different port to avoid conflict
     environment:
-      - MONGODB_URI=mongodb://mongodb:27017
-      - ENABLE_AUTH=true
-      - API_USERNAME=your_username
-      - API_PASSWORD=your_password
-      - JWT_SECRET=your_jwt_secret
-      - JWT_EXPIRATION=3600      
+      MONGO_URI: mongodb://root:example@mongodb_order_service:27017
+      DATABASE_NAME: orders
+      SERVER_ADDRESS: :8080
     depends_on:
-      - mongodb
+      - mongodb_order
 
 volumes:
-  mongodb_data:  # Declare the named volume
+  mongo-order-data:
+
+networks:
+  backend:

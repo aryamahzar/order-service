@@ -1,7 +1,5 @@
 package auth
 
-import "os"
-
 type Role string
 
 const (
@@ -27,9 +25,6 @@ var rolePermissions = map[Role][]string{
 }
 
 func HasPermission(role Role, permission string) bool {
-	if os.Getenv("ENABLE_AUTH") != "true" {
-		return true
-	}
 	for _, p := range rolePermissions[role] {
 		if p == permission {
 			return true
