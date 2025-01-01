@@ -51,6 +51,8 @@ func (h *OrderHandler) CreateOrder(w http.ResponseWriter, r *http.Request) {
 	// Check product availability with Inventory Service via API Gateway
 	for _, item := range order.Items {
 
+		fmt.Printf("item : %+v\n", item)
+
 		available, err := h.checkProductAvailability(item.ProductID, item.Quantity)
 		fmt.Println("available : ", available)
 		fmt.Println("err : ", err)
@@ -78,15 +80,14 @@ func (h *OrderHandler) CreateOrder(w http.ResponseWriter, r *http.Request) {
 
 func (h *OrderHandler) checkProductAvailability(productID string, quantity int) (bool, error) {
 
-	    // Configure a custom transport to skip SSL verification
-		insecureTransport := &http.Transport{
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: true, // Ignore insecure SSL certificates
-			},
-		}
+	// Configure a custom transport to skip SSL verification
+	insecureTransport := &http.Transport{
+		TLSClientConfig: &tls.Config{
+			InsecureSkipVerify: true, // Ignore insecure SSL certificates
+		},
+	}
 
-		insecureClient := &http.Client{Transport: insecureTransport}
-
+	insecureClient := &http.Client{Transport: insecureTransport}
 
 	url := fmt.Sprintf("%s/products/%s", h.apiGatewayURL, productID)
 	fmt.Println("url : ", url)
@@ -110,13 +111,13 @@ func (h *OrderHandler) checkProductAvailability(productID string, quantity int) 
 	var product struct {
 		ProductID string `json:"product_id"`
 		Quantity  int    `json:"quantity"`
-		Name	  string `json:"name"`
+		Name      string `json:"name"`
 	}
 	if err := json.NewDecoder(resp.Body).Decode(&product); err != nil {
 		fmt.Println("error decode check availability  :", err)
 		return false, err
 	}
-	fmt.Printf("product : %s\n", product)
+	fmt.Printf("product : %+v\n", product)
 	return product.Quantity >= quantity, nil
 
 }
